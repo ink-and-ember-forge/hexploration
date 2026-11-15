@@ -6,7 +6,8 @@ import { MODULE_ID, STATES } from "./states.js";
 export const key = ({ i, j }) => `${i}_${j}`;
 
 export function getFog(scene) {
-  return scene?.getFlag(MODULE_ID, "fog") ?? { enabled: false, hexes: {} };
+  const fog = scene?.getFlag(MODULE_ID, "fog") ?? {};
+  return { enabled: false, ...fog, hexes: fog.hexes ?? {} };
 }
 
 export const isHexScene = (scene) => scene?.grid?.isHexagonal ?? false;
@@ -87,4 +88,11 @@ export async function setImage(scene, path) {
   if (!game.user.isGM) return;
   if (path) await scene.setFlag(MODULE_ID, "fog.image", path);
   else await scene.update({ [`flags.${MODULE_ID}.fog.-=image`]: null });
+}
+
+/** GM only. Sets every hex back to Unknown (keeps the fog on/off state, image and restore data). */
+export async function resetAllHexes(scene) {
+  if (!game.user.isGM) return;
+  // "==" replaces the whole object instead of merging, so every stored hex is dropped in one update.
+  await scene.update({ [`flags.${MODULE_ID}.fog.==hexes`]: {} });
 }

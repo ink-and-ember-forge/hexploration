@@ -1,4 +1,4 @@
-import { MODULE_ID, getFog, hexAt, isHexScene, setEnabled, setHexes, setImage, stateOf } from "./fog.js";
+import { MODULE_ID, getFog, hexAt, isHexScene, resetAllHexes, setEnabled, setHexes, setImage, stateOf } from "./fog.js";
 import { STATES, rank } from "./states.js";
 import { closeMenu, showStatusMenu } from "./menu.js";
 import { FogOverlay } from "./overlay.js";
@@ -51,6 +51,14 @@ Hooks.on("getSceneControlButtons", (controls) => {
     active: game.settings.get(MODULE_ID, "dimFog"),
     onChange: (_event, active) => game.settings.set(MODULE_ID, "dimFog", active),
   };
+  tools.hexFogReset = {
+    name: "hexFogReset",
+    title: "HEXPLORATION.Fog.ResetTitle",
+    icon: "fa-solid fa-rotate-left",
+    order: 105,
+    button: true,
+    onChange: () => confirmReset(),
+  };
   tools.hexFogImage = {
     name: "hexFogImage",
     title: "HEXPLORATION.Fog.ImageTitle",
@@ -74,6 +82,23 @@ Hooks.on("getSceneControlButtons", (controls) => {
     },
   };
 });
+
+async function confirmReset() {
+  const scene = canvas.scene;
+  if (!scene) return;
+  const count = Object.keys(getFog(scene).hexes).length;
+  if (!count) return ui.notifications.info(game.i18n.localize("HEXPLORATION.Fog.ResetNothing"));
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    window: { title: game.i18n.localize("HEXPLORATION.Fog.ResetTitle") },
+    content: `<p>${game.i18n.format("HEXPLORATION.Fog.ResetConfirm", { count })}</p>`,
+    yes: { label: game.i18n.localize("HEXPLORATION.Fog.ResetYes"), default: false },
+    no: { default: true }, // Enter/Escape must not trigger the destructive option
+    rejectClose: false,
+  });
+  if (!confirmed) return;
+  await resetAllHexes(scene);
+  ui.notifications.info(game.i18n.localize("HEXPLORATION.Fog.ResetDone"));
+}
 
 async function openImageDialog() {
   const scene = canvas.scene;
