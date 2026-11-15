@@ -15,7 +15,10 @@ Hooks.once("init", () => {
   });
 });
 
-Hooks.on("canvasReady", () => overlay.attach());
+Hooks.on("canvasReady", () => {
+  console.debug(`${MODULE_ID} | canvasReady, hex grid:`, canvas.grid.isHexagonal);
+  overlay.attach();
+});
 Hooks.on("canvasTearDown", () => overlay.detach());
 Hooks.on("updateScene", (scene, changes) => {
   if (scene.id === canvas.scene?.id && foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`)) overlay.redraw();
@@ -54,6 +57,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
 });
 
 function setTool(tool) {
+  console.debug(`${MODULE_ID} | tool`, tool);
   activeTool = tool;
   canvas.stage.off("pointerdown", onPointerDown);
   if (tool) canvas.stage.on("pointerdown", onPointerDown);
@@ -63,6 +67,10 @@ async function onPointerDown(event) {
   if (!activeTool || event.button !== 0 || !canvas.scene) return;
   const point = event.getLocalPosition(canvas.stage);
   const coords = hexAt(point);
+  console.debug(`${MODULE_ID} | click`, activeTool, point, coords);
+  if (!getFog(canvas.scene).enabled) {
+    return ui.notifications.warn(game.i18n.localize("HEXPLORATION.Fog.NotEnabled"));
+  }
   if (activeTool === "reveal") {
     // Click cycles unknown -> seen -> explored; shift-click jumps straight to explored.
     const current = stateOf(canvas.scene, coords);
