@@ -1,6 +1,6 @@
-/** Hex fog state, stored in scene flags as { enabled, hexes: { "i.j": "seen"|"explored" } }. */
-export const MODULE_ID = "hexploration";
-export const STATES = Object.freeze({ UNKNOWN: "unknown", SEEN: "seen", EXPLORED: "explored" });
+/** Hex fog state, stored in scene flags as { enabled, image?, restore?, hexes: { "i_j": status } } (statuses in states.js). */
+export { MODULE_ID, STATES } from "./states.js";
+import { MODULE_ID, STATES } from "./states.js";
 
 // "_" not "." so keys are safe inside Foundry dot-paths.
 export const key = ({ i, j }) => `${i}_${j}`;

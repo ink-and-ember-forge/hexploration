@@ -1,4 +1,6 @@
-import { MODULE_ID, STATES, getFog, hexAt, isHexScene, setEnabled, setHexes, setImage, stateOf } from "./fog.js";
+import { MODULE_ID, getFog, hexAt, isHexScene, setEnabled, setHexes, setImage, stateOf } from "./fog.js";
+import { STATES, rank } from "./states.js";
+import { closeMenu, showStatusMenu } from "./menu.js";
 import { FogOverlay } from "./overlay.js";
 
 const overlay = new FogOverlay();
@@ -25,19 +27,21 @@ Hooks.on("canvasReady", () => {
   console.log(`${MODULE_ID} | canvasReady, hex grid:`, canvas.grid.isHexagonal);
   overlay.attach();
 });
-Hooks.on("canvasTearDown", () => overlay.detach());
+Hooks.on("canvasTearDown", () => {
+  closeMenu();
+  overlay.detach();
+});
 Hooks.on("updateScene", (scene, changes) => {
   if (scene.id === canvas.scene?.id && foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`)) overlay.redraw();
 });
 
 // v13 scene controls: tools is an object keyed by tool name. Non-toggle tools behave like radio
-// buttons (only one active at a time, including the core Select tool), so reveal/hide exclude each other.
+// buttons (only one active at a time, including the core Select tool).
 Hooks.on("getSceneControlButtons", (controls) => {
   if (!game.user.isGM) return;
   const tools = controls.tokens?.tools;
   if (!tools) return;
-  tools.hexReveal = { name: "hexReveal", title: "HEXPLORATION.Tools.Reveal", icon: "fa-solid fa-eye", order: 100 };
-  tools.hexHide = { name: "hexHide", title: "HEXPLORATION.Tools.Hide", icon: "fa-solid fa-eye-slash", order: 101 };
+  tools.hexStatus = { name: "hexStatus", title: "HEXPLORATION.Tools.Status", icon: "fa-solid fa-hexagon-nodes", order: 100 };
   tools.hexFogDim = {
     name: "hexFogDim",
     title: "HEXPLORATION.Fog.DimTitle",
@@ -91,34 +95,55 @@ async function openImageDialog() {
   await setImage(scene, image.trim());
 }
 
-const TOOL_ACTIONS = { hexReveal: "reveal", hexHide: "hide" };
+const statusToolActive = () => game.user.isGM && ui.controls?.tool?.name === "hexStatus";
 
-/**
- * Listen to the raw browser event on the canvas element (capture phase, before PIXI sees it).
- * The active tool is read from Foundry's own state, so there is nothing for us to keep in sync.
- */
-function onCanvasPointerDown(event) {
-  if (!game.user.isGM || event.button !== 0 || event.target !== canvas.app?.view) return;
-  const action = TOOL_ACTIONS[ui.controls?.tool?.name];
-  if (!action || !canvas.scene) return;
-  event.preventDefault();
-  event.stopPropagation(); // keep the click from also starting a token marquee/deselect
-  const point = canvas.canvasCoordinatesFromClient({ x: event.clientX, y: event.clientY });
-  const coords = hexAt(point);
-  console.log(`${MODULE_ID} | click`, action, point, coords);
-  if (!getFog(canvas.scene).enabled) {
-    return ui.notifications.warn(game.i18n.localize("HEXPLORATION.Fog.NotEnabled"));
-  }
-  if (action === "hide") return setHexes(canvas.scene, [coords], STATES.UNKNOWN);
-  // Click cycles unknown -> seen -> explored; shift-click jumps straight to explored.
-  const next = event.shiftKey || stateOf(canvas.scene, coords) === STATES.SEEN ? STATES.EXPLORED : STATES.SEEN;
-  return setHexes(canvas.scene, [coords], next);
+/** Opens the status menu for the hex under the pointer. */
+function openStatusMenu(event) {
+  const scene = canvas.scene;
+  if (!scene) return;
+  if (!getFog(scene).enabled) return ui.notifications.warn(game.i18n.localize("HEXPLORATION.Fog.NotEnabled"));
+  const coords = hexAt(canvas.canvasCoordinatesFromClient({ x: event.clientX, y: event.clientY }));
+  console.log(`${MODULE_ID} | menu for hex`, coords);
+  showStatusMenu(event.clientX, event.clientY, stateOf(scene, coords), (state) => setHexes(scene, [coords], state));
 }
 
-Hooks.once("ready", () => {
-  document.addEventListener("pointerdown", onCanvasPointerDown, { capture: true });
-  console.log(`${MODULE_ID} | ready`);
+/**
+ * Raw browser events on the canvas element, in the capture phase (before PIXI sees them).
+ * With the Hex Status tool active: left-click opens the menu; right-click opens it too, but only on
+ * release without dragging, so right-drag panning keeps working.
+ */
+let rightDown = null;
+document.addEventListener(
+  "pointerdown",
+  (event) => {
+    if (!statusToolActive() || event.target !== canvas.app?.view) return;
+    if (event.button === 2) rightDown = { x: event.clientX, y: event.clientY };
+    else if (event.button === 0) {
+      event.preventDefault();
+      event.stopPropagation(); // keep the click from also starting a token marquee/deselect
+      openStatusMenu(event);
+    }
+  },
+  { capture: true },
+);
+document.addEventListener(
+  "pointerup",
+  (event) => {
+    if (event.button !== 2 || !rightDown) return;
+    const dragged = Math.hypot(event.clientX - rightDown.x, event.clientY - rightDown.y) > 5;
+    rightDown = null;
+    if (dragged || !statusToolActive() || event.target !== canvas.app?.view) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openStatusMenu(event);
+  },
+  { capture: true },
+);
+document.addEventListener("contextmenu", (e) => statusToolActive() && e.target === canvas.app?.view && e.preventDefault(), {
+  capture: true,
 });
+
+Hooks.once("ready", () => console.log(`${MODULE_ID} | ready`));
 
 // Auto-reveal the hex a party token moves into. Runs on the GM client only.
 Hooks.on("updateToken", (token, changes) => {
@@ -129,5 +154,7 @@ Hooks.on("updateToken", (token, changes) => {
   if (token.actor?.type !== "party" && !token.actor?.getFlag(MODULE_ID, "isParty")) return;
   const center = token.object?.center;
   if (!center) return;
-  setHexes(scene, [hexAt(center)], STATES.EXPLORED);
+  // Moving onto a hex marks it Visited, but never downgrades one already Explored/Cleared/Claimed.
+  const coords = hexAt(center);
+  if (rank(stateOf(scene, coords)) < rank(STATES.VISITED)) setHexes(scene, [coords], STATES.VISITED);
 });
