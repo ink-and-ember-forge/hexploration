@@ -16,3 +16,9 @@ On a hex-grid scene, use the Token controls: hexagon button toggles fog, eye rev
 
 ## Status
 Untested scaffold: not yet run inside Foundry.
+
+## Releasing
+Create a GitHub release with a tag like `v0.2.0`. The workflow stamps the version and manifest/download URLs
+into `module.json`, zips the module, and attaches `module.json` and `module.zip` to the release.
+Install in Foundry with the manifest URL:
+`https://github.com/ink-and-ember-forge/hexploration/releases/latest/download/module.json`
