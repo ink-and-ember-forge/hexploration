@@ -30,7 +30,7 @@ jobs:
           cat module.json
 
       - name: Package
-        run: zip -r module.zip module.json README.md scripts lang
+        run: zip -r module.zip module.json README.md scripts lang styles
 
       - name: Upload to release
         env:

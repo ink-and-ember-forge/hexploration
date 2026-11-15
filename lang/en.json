@@ -2,8 +2,7 @@
   "HEXPLORATION": {
     "Title": "Hexploration",
     "Tools": {
-      "Reveal": "Reveal Hexes",
-      "Hide": "Hide Hexes"
+      "Status": "Hex Status (click or right-click a hex)"
     },
     "Fog": {
       "Enable": "Enable hex fog on this scene",
@@ -18,7 +17,18 @@
       "NeedsHexGrid": "Hex fog requires a hexagonal grid scene."
     },
     "Settings": {
-      "AutoReveal": { "Name": "Reveal on party move", "Hint": "Reveal the hex a party token moves into." }
+      "AutoReveal": {
+        "Name": "Reveal on party move",
+        "Hint": "Reveal the hex a party token moves into."
+      }
+    },
+    "State": {
+      "unknown": "Unknown",
+      "seen": "Seen",
+      "visited": "Visited",
+      "explored": "Explored",
+      "cleared": "Cleared",
+      "claimed": "Claimed"
     }
   }
 }
