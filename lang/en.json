@@ -9,6 +9,7 @@
       "Enable": "Enable hex fog on this scene",
       "Enabled": "Hex fog enabled",
       "Disabled": "Hex fog disabled",
+      "NotEnabled": "Hex fog is off on this scene. Use the hexagon button first.",
       "NeedsHexGrid": "Hex fog requires a hexagonal grid scene."
     },
     "Settings": {
