@@ -1,4 +1,4 @@
-import { MODULE_ID, STATES, getFog, hexAt, isHexScene, setEnabled, setHexes, stateOf } from "./fog.js";
+import { MODULE_ID, STATES, getFog, hexAt, isHexScene, setEnabled, setHexes, setImage, stateOf } from "./fog.js";
 import { FogOverlay } from "./overlay.js";
 
 const overlay = new FogOverlay();
@@ -31,6 +31,14 @@ Hooks.on("getSceneControlButtons", (controls) => {
   if (!tools) return;
   tools.hexReveal = { name: "hexReveal", title: "HEXPLORATION.Tools.Reveal", icon: "fa-solid fa-eye", order: 100 };
   tools.hexHide = { name: "hexHide", title: "HEXPLORATION.Tools.Hide", icon: "fa-solid fa-eye-slash", order: 101 };
+  tools.hexFogImage = {
+    name: "hexFogImage",
+    title: "HEXPLORATION.Fog.ImageTitle",
+    icon: "fa-solid fa-image",
+    order: 103,
+    button: true,
+    onChange: () => openImageDialog(),
+  };
   tools.hexFogToggle = {
     name: "hexFogToggle",
     title: "HEXPLORATION.Fog.Enable",
@@ -46,6 +54,26 @@ Hooks.on("getSceneControlButtons", (controls) => {
     },
   };
 });
+
+async function openImageDialog() {
+  const scene = canvas.scene;
+  if (!scene) return;
+  const current = getFog(scene).image ?? "";
+  const hint = game.i18n.localize("HEXPLORATION.Fog.ImageHint");
+  const image = await foundry.applications.api.DialogV2.prompt({
+    window: { title: game.i18n.localize("HEXPLORATION.Fog.ImageTitle") },
+    content: `<div class="form-group"><label>${game.i18n.localize("HEXPLORATION.Fog.ImageLabel")}</label>
+      <div class="form-fields"><file-picker name="image" type="image" value="${foundry.utils.escapeHTML(current)}"></file-picker></div>
+      <p class="hint">${hint}</p></div>`,
+    ok: {
+      label: game.i18n.localize("HEXPLORATION.Fog.ImageSave"),
+      callback: (_event, button) => new foundry.applications.ux.FormDataExtended(button.form).object.image,
+    },
+    rejectClose: false,
+  });
+  if (image === undefined || image === null) return; // dialog dismissed
+  await setImage(scene, image.trim());
+}
 
 const TOOL_ACTIONS = { hexReveal: "reveal", hexHide: "hide" };
 
