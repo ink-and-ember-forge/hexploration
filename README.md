@@ -14,6 +14,10 @@ what that module lacks. It works standalone and integrates softly when Kingmaker
 On a hex-grid scene, use the Token controls: hexagon button toggles fog, eye reveals hexes
 (click: seen, click again or shift-click: explored), eye-slash re-hides. The party actor's token auto-reveals as it moves.
 
+Enabling hex fog also turns off Foundry's token vision, fog exploration and darkness on that scene (global
+illumination on), and turning it off restores the previous values. The GM sees fog at full strength like players;
+the half-circle button dims it for a see-through preview. The image button sets a per-scene fog image.
+
 ## Status
 Untested scaffold: not yet run inside Foundry.
 
