@@ -2,7 +2,6 @@ import { MODULE_ID, STATES, getFog, hexAt, isHexScene, setEnabled, setHexes, sta
 import { FogOverlay } from "./overlay.js";
 
 const overlay = new FogOverlay();
-let activeTool = null; // "reveal" | "hide" | null
 
 Hooks.once("init", () => {
   game.settings.register(MODULE_ID, "autoReveal", {
@@ -17,32 +16,21 @@ Hooks.once("init", () => {
 
 Hooks.on("canvasReady", () => {
   console.log(`${MODULE_ID} | canvasReady, hex grid:`, canvas.grid.isHexagonal);
-  activeTool = null; // tools don't carry across scenes
   overlay.attach();
-  ui.controls?.render();
 });
 Hooks.on("canvasTearDown", () => overlay.detach());
 Hooks.on("updateScene", (scene, changes) => {
   if (scene.id === canvas.scene?.id && foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`)) overlay.redraw();
 });
 
-// v13 scene controls: tools is an object keyed by tool name.
+// v13 scene controls: tools is an object keyed by tool name. Non-toggle tools behave like radio
+// buttons (only one active at a time, including the core Select tool), so reveal/hide exclude each other.
 Hooks.on("getSceneControlButtons", (controls) => {
   if (!game.user.isGM) return;
   const tools = controls.tokens?.tools;
   if (!tools) return;
-  // "active" is derived from activeTool on every build, so the two tools behave like radio buttons.
-  const mk = (name, tool, icon, order) => ({
-    name,
-    title: `HEXPLORATION.Tools.${tool === "reveal" ? "Reveal" : "Hide"}`,
-    icon,
-    order,
-    toggle: true,
-    active: activeTool === tool,
-    onChange: (_event, active) => setTool(active ? tool : activeTool === tool ? null : activeTool),
-  });
-  tools.hexReveal = mk("hexReveal", "reveal", "fa-solid fa-eye", 100);
-  tools.hexHide = mk("hexHide", "hide", "fa-solid fa-eye-slash", 101);
+  tools.hexReveal = { name: "hexReveal", title: "HEXPLORATION.Tools.Reveal", icon: "fa-solid fa-eye", order: 100 };
+  tools.hexHide = { name: "hexHide", title: "HEXPLORATION.Tools.Hide", icon: "fa-solid fa-eye-slash", order: 101 };
   tools.hexFogToggle = {
     name: "hexFogToggle",
     title: "HEXPLORATION.Fog.Enable",
@@ -59,30 +47,34 @@ Hooks.on("getSceneControlButtons", (controls) => {
   };
 });
 
-function setTool(tool) {
-  console.log(`${MODULE_ID} | tool`, tool);
-  activeTool = tool;
-  overlay.setCapture(tool ? onPointerDown : null);
-  ui.controls.render(); // rebuild controls so the other tool's toggle switches off
-}
+const TOOL_ACTIONS = { hexReveal: "reveal", hexHide: "hide" };
 
-async function onPointerDown(event) {
-  if (!activeTool || event.button !== 0 || !canvas.scene) return;
-  const point = event.getLocalPosition(canvas.stage);
+/**
+ * Listen to the raw browser event on the canvas element (capture phase, before PIXI sees it).
+ * The active tool is read from Foundry's own state, so there is nothing for us to keep in sync.
+ */
+function onCanvasPointerDown(event) {
+  if (!game.user.isGM || event.button !== 0 || event.target !== canvas.app?.view) return;
+  const action = TOOL_ACTIONS[ui.controls?.tool?.name];
+  if (!action || !canvas.scene) return;
+  event.preventDefault();
+  event.stopPropagation(); // keep the click from also starting a token marquee/deselect
+  const point = canvas.canvasCoordinatesFromClient({ x: event.clientX, y: event.clientY });
   const coords = hexAt(point);
-  console.log(`${MODULE_ID} | click`, activeTool, point, coords);
+  console.log(`${MODULE_ID} | click`, action, point, coords);
   if (!getFog(canvas.scene).enabled) {
     return ui.notifications.warn(game.i18n.localize("HEXPLORATION.Fog.NotEnabled"));
   }
-  if (activeTool === "reveal") {
-    // Click cycles unknown -> seen -> explored; shift-click jumps straight to explored.
-    const current = stateOf(canvas.scene, coords);
-    const next = event.shiftKey || current === STATES.SEEN ? STATES.EXPLORED : STATES.SEEN;
-    await setHexes(canvas.scene, [coords], next);
-  } else {
-    await setHexes(canvas.scene, [coords], STATES.UNKNOWN);
-  }
+  if (action === "hide") return setHexes(canvas.scene, [coords], STATES.UNKNOWN);
+  // Click cycles unknown -> seen -> explored; shift-click jumps straight to explored.
+  const next = event.shiftKey || stateOf(canvas.scene, coords) === STATES.SEEN ? STATES.EXPLORED : STATES.SEEN;
+  return setHexes(canvas.scene, [coords], next);
 }
+
+Hooks.once("ready", () => {
+  document.addEventListener("pointerdown", onCanvasPointerDown, { capture: true });
+  console.log(`${MODULE_ID} | ready`);
+});
 
 // Auto-reveal the hex a party token moves into. Runs on the GM client only.
 Hooks.on("updateToken", (token, changes) => {
