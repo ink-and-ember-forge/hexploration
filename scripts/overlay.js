@@ -128,6 +128,19 @@ export class FogOverlay {
       }
     }
 
+    // The core grid can end up hidden under the fog, which makes picking a hex hard. Redraw the cell
+    // edges of fogged hexes: a dark halo plus a light line, so they read on dark and light fog alike.
+    const fogged = Object.values(groups).flatMap((g) => g.polys);
+    if (fogged.length) {
+      const t = Math.max(1, scene.grid.thickness ?? 1);
+      const grid = new PIXI.Graphics();
+      grid.lineStyle(t + 2, 0x000000, 0.35);
+      for (const poly of fogged) grid.drawPolygon(poly);
+      grid.lineStyle(t, 0xffffff, 0.4);
+      for (const poly of fogged) grid.drawPolygon(poly);
+      this.content.addChild(grid);
+    }
+
     // Outlines on top: a dark halo first so the coloured line reads on any terrain.
     if (outlines.length) {
       const g = new PIXI.Graphics();
