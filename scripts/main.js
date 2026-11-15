@@ -17,7 +17,9 @@ Hooks.once("init", () => {
 
 Hooks.on("canvasReady", () => {
   console.log(`${MODULE_ID} | canvasReady, hex grid:`, canvas.grid.isHexagonal);
+  activeTool = null; // tools don't carry across scenes
   overlay.attach();
+  ui.controls?.render();
 });
 Hooks.on("canvasTearDown", () => overlay.detach());
 Hooks.on("updateScene", (scene, changes) => {
@@ -29,17 +31,18 @@ Hooks.on("getSceneControlButtons", (controls) => {
   if (!game.user.isGM) return;
   const tools = controls.tokens?.tools;
   if (!tools) return;
-  const mk = (name, icon, order, handler) => ({
+  // "active" is derived from activeTool on every build, so the two tools behave like radio buttons.
+  const mk = (name, tool, icon, order) => ({
     name,
-    title: `HEXPLORATION.Tools.${name === "hexReveal" ? "Reveal" : "Hide"}`,
+    title: `HEXPLORATION.Tools.${tool === "reveal" ? "Reveal" : "Hide"}`,
     icon,
     order,
     toggle: true,
-    active: false,
-    onChange: (_event, active) => handler(active),
+    active: activeTool === tool,
+    onChange: (_event, active) => setTool(active ? tool : activeTool === tool ? null : activeTool),
   });
-  tools.hexReveal = mk("hexReveal", "fa-solid fa-eye", 100, (a) => setTool(a ? "reveal" : null));
-  tools.hexHide = mk("hexHide", "fa-solid fa-eye-slash", 101, (a) => setTool(a ? "hide" : null));
+  tools.hexReveal = mk("hexReveal", "reveal", "fa-solid fa-eye", 100);
+  tools.hexHide = mk("hexHide", "hide", "fa-solid fa-eye-slash", 101);
   tools.hexFogToggle = {
     name: "hexFogToggle",
     title: "HEXPLORATION.Fog.Enable",
@@ -60,6 +63,7 @@ function setTool(tool) {
   console.log(`${MODULE_ID} | tool`, tool);
   activeTool = tool;
   overlay.setCapture(tool ? onPointerDown : null);
+  ui.controls.render(); // rebuild controls so the other tool's toggle switches off
 }
 
 async function onPointerDown(event) {
