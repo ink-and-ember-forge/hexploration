@@ -12,7 +12,7 @@ what that module lacks. It works standalone and integrates softly when Kingmaker
 
 ## Fog and hex status
 On a hex-grid scene, use the Token controls: the hexagon button toggles fog, and the **Hex Status** tool lets you
-click (or right-click without dragging) a hex to pick its status from a menu. Statuses, in order:
+click a hex to pick its status from a menu. Statuses, in order:
 
 | Status | Look |
 | --- | --- |
