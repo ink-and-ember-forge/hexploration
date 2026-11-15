@@ -2,7 +2,7 @@
   "HEXPLORATION": {
     "Title": "Hexploration",
     "Tools": {
-      "Status": "Hex Status (click or right-click a hex)"
+      "Status": "Hex Status (click a hex)"
     },
     "Fog": {
       "Enable": "Enable hex fog on this scene",

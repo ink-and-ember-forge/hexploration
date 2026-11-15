@@ -108,40 +108,19 @@ function openStatusMenu(event) {
 }
 
 /**
- * Raw browser events on the canvas element, in the capture phase (before PIXI sees them).
- * With the Hex Status tool active: left-click opens the menu; right-click opens it too, but only on
- * release without dragging, so right-drag panning keeps working.
+ * Raw browser event on the canvas element, in the capture phase (before PIXI sees it).
+ * With the Hex Status tool active, a left-click opens the status menu for that hex.
  */
-let rightDown = null;
 document.addEventListener(
   "pointerdown",
   (event) => {
-    if (!statusToolActive() || event.target !== canvas.app?.view) return;
-    if (event.button === 2) rightDown = { x: event.clientX, y: event.clientY };
-    else if (event.button === 0) {
-      event.preventDefault();
-      event.stopPropagation(); // keep the click from also starting a token marquee/deselect
-      openStatusMenu(event);
-    }
-  },
-  { capture: true },
-);
-document.addEventListener(
-  "pointerup",
-  (event) => {
-    if (event.button !== 2 || !rightDown) return;
-    const dragged = Math.hypot(event.clientX - rightDown.x, event.clientY - rightDown.y) > 5;
-    rightDown = null;
-    if (dragged || !statusToolActive() || event.target !== canvas.app?.view) return;
+    if (event.button !== 0 || !statusToolActive() || event.target !== canvas.app?.view) return;
     event.preventDefault();
-    event.stopPropagation();
+    event.stopPropagation(); // keep the click from also starting a token marquee/deselect
     openStatusMenu(event);
   },
   { capture: true },
 );
-document.addEventListener("contextmenu", (e) => statusToolActive() && e.target === canvas.app?.view && e.preventDefault(), {
-  capture: true,
-});
 
 Hooks.once("ready", () => console.log(`${MODULE_ID} | ready`));
 

@@ -25,13 +25,19 @@ function dashedPolygon(g, pts, [dash, gap]) {
  * otherwise plain black.
  */
 export class FogOverlay {
-  container = null;
+  container = null; // root: holds the clip mask and the content
+  content = null; // everything drawn lives here, clipped to the scene rectangle
   #generation = 0;
 
   attach() {
     this.detach();
+    const rect = canvas.dimensions.sceneRect;
     this.container = new PIXI.Container();
     this.container.eventMode = "none";
+    const mask = new PIXI.Graphics().beginFill(0xffffff).drawRect(rect.x, rect.y, rect.width, rect.height).endFill();
+    this.content = new PIXI.Container();
+    this.content.mask = mask; // the mask must be in the display list too
+    this.container.addChild(mask, this.content);
     canvas.interface.addChild(this.container);
     this.redraw();
   }
@@ -40,6 +46,7 @@ export class FogOverlay {
     this.#generation++;
     this.container?.destroy({ children: true });
     this.container = null;
+    this.content = null;
   }
 
   async redraw() {
@@ -47,7 +54,7 @@ export class FogOverlay {
     const generation = ++this.#generation;
     const scene = canvas.scene;
     const fog = getFog(scene);
-    const clear = () => this.container.removeChildren().forEach((c) => c.destroy());
+    const clear = () => this.content.removeChildren().forEach((c) => c.destroy());
     if (!fog.enabled || !canvas.grid.isHexagonal) return clear();
 
     let texture = null;
@@ -68,19 +75,28 @@ export class FogOverlay {
     };
     const outlines = [];
     const rect = canvas.dimensions.sceneRect;
-    const rows = Math.ceil(canvas.dimensions.sceneHeight / canvas.grid.sizeY) + 2;
-    const cols = Math.ceil(canvas.dimensions.sceneWidth / canvas.grid.sizeX) + 2;
-    const first = canvas.grid.getOffset({ x: rect.x, y: rect.y });
-    for (let di = -1; di <= rows; di++) {
-      for (let dj = -1; dj <= cols; dj++) {
-        const coords = { i: first.i + di, j: first.j + dj };
+    // Cover every hex that could touch the scene: bound the offset range by the four corners, padded by 1.
+    const corners = [
+      { x: rect.x, y: rect.y },
+      { x: rect.right, y: rect.y },
+      { x: rect.x, y: rect.bottom },
+      { x: rect.right, y: rect.bottom },
+    ].map((p) => canvas.grid.getOffset(p));
+    const [iMin, iMax] = [Math.min(...corners.map((c) => c.i)) - 1, Math.max(...corners.map((c) => c.i)) + 1];
+    const [jMin, jMax] = [Math.min(...corners.map((c) => c.j)) - 1, Math.max(...corners.map((c) => c.j)) + 1];
+    for (let i = iMin; i <= iMax; i++) {
+      for (let j = jMin; j <= jMax; j++) {
+        const coords = { i, j };
         const state = stateOf(scene, coords);
         const style = STATE_STYLE[state] ?? STATE_STYLE[STATES.UNKNOWN];
         if (!style.fogged && !style.outline) continue; // visited: just the map
-        const center = canvas.grid.getCenterPoint(coords);
-        if (!rect.contains(center.x, center.y)) continue; // don't draw into the padding around the map
         const verts = canvas.grid.getVertices(coords);
         if (!verts.length) continue;
+        // Keep any hex that overlaps the scene, even partly: edge hexes must be fogged too.
+        const xs = verts.map((p) => p.x);
+        const ys = verts.map((p) => p.y);
+        if (Math.max(...xs) < rect.x || Math.min(...xs) > rect.right || Math.max(...ys) < rect.y || Math.min(...ys) > rect.bottom) continue;
+        const center = canvas.grid.getCenterPoint(coords);
         if (style.fogged) groups[state].polys.push(verts.flatMap((p) => [p.x, p.y]));
         else {
           // Inset the outline so neighbouring hexes' outlines stay distinct.
@@ -104,11 +120,11 @@ export class FogOverlay {
         sprite.height = rect.height;
         sprite.alpha = alpha;
         sprite.mask = shape; // mask must be in the display list too
-        this.container.addChild(shape, sprite);
+        this.content.addChild(shape, sprite);
       } else {
         shape.tint = 0x000000;
         shape.alpha = alpha;
-        this.container.addChild(shape);
+        this.content.addChild(shape);
       }
     }
 
@@ -122,7 +138,7 @@ export class FogOverlay {
         if (outline.dash) dashedPolygon(g, pts, outline.dash);
         else g.drawPolygon(pts.flatMap((p) => [p.x, p.y]));
       }
-      this.container.addChild(g);
+      this.content.addChild(g);
     }
   }
 }
