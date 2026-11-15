@@ -43,10 +43,11 @@ export class FogOverlay {
       if (generation !== this.#generation || !this.container) return; // superseded while loading
     }
 
-    const gm = game.user.isGM;
+    // The GM sees the same fog as players unless they switch on the dimmed preview.
+    const dim = game.user.isGM && game.settings.get("hexploration", "dimFog");
     const groups = {
-      [STATES.UNKNOWN]: { polys: [], alpha: gm ? 0.4 : 1 },
-      [STATES.SEEN]: { polys: [], alpha: gm ? 0.15 : 0.55 },
+      [STATES.UNKNOWN]: { polys: [], alpha: dim ? 0.4 : 1 },
+      [STATES.SEEN]: { polys: [], alpha: dim ? 0.15 : 0.55 },
     };
     const rect = canvas.dimensions.sceneRect;
     const rows = Math.ceil(canvas.dimensions.sceneHeight / canvas.grid.sizeY) + 2;
@@ -57,6 +58,8 @@ export class FogOverlay {
         const coords = { i: first.i + di, j: first.j + dj };
         const state = stateOf(scene, coords);
         if (state === STATES.EXPLORED) continue;
+        const center = canvas.grid.getCenterPoint(coords);
+        if (!rect.contains(center.x, center.y)) continue; // don't draw into the padding around the map
         const verts = canvas.grid.getVertices(coords);
         if (verts.length) groups[state].polys.push(verts.flatMap((p) => [p.x, p.y]));
       }

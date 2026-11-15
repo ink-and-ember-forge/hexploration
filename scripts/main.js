@@ -12,6 +12,13 @@ Hooks.once("init", () => {
     type: Boolean,
     default: true,
   });
+  game.settings.register(MODULE_ID, "dimFog", {
+    scope: "client",
+    config: false,
+    type: Boolean,
+    default: false,
+    onChange: () => overlay.redraw(),
+  });
 });
 
 Hooks.on("canvasReady", () => {
@@ -31,6 +38,15 @@ Hooks.on("getSceneControlButtons", (controls) => {
   if (!tools) return;
   tools.hexReveal = { name: "hexReveal", title: "HEXPLORATION.Tools.Reveal", icon: "fa-solid fa-eye", order: 100 };
   tools.hexHide = { name: "hexHide", title: "HEXPLORATION.Tools.Hide", icon: "fa-solid fa-eye-slash", order: 101 };
+  tools.hexFogDim = {
+    name: "hexFogDim",
+    title: "HEXPLORATION.Fog.DimTitle",
+    icon: "fa-solid fa-circle-half-stroke",
+    order: 104,
+    toggle: true,
+    active: game.settings.get(MODULE_ID, "dimFog"),
+    onChange: (_event, active) => game.settings.set(MODULE_ID, "dimFog", active),
+  };
   tools.hexFogImage = {
     name: "hexFogImage",
     title: "HEXPLORATION.Fog.ImageTitle",

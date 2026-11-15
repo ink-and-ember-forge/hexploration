@@ -33,9 +33,40 @@ export async function setHexes(scene, coordsList, state) {
   await scene.update(update);
 }
 
+/**
+ * GM only. Enabling hex fog also switches off Foundry's own token vision, fog exploration and
+ * darkness for the scene (remembering the previous values); disabling restores them.
+ */
 export async function setEnabled(scene, enabled) {
   if (!game.user.isGM) return;
-  await scene.setFlag(MODULE_ID, "fog.enabled", enabled);
+  const flag = `flags.${MODULE_ID}.fog`;
+  const fog = getFog(scene);
+  if (enabled) {
+    const update = {
+      [`${flag}.enabled`]: true,
+      tokenVision: false,
+      "fog.exploration": false,
+      "environment.globalLight.enabled": true,
+    };
+    // Only remember the originals the first time, so re-enabling can't overwrite them with our own values.
+    if (!fog.restore) {
+      update[`${flag}.restore`] = {
+        tokenVision: scene.tokenVision,
+        exploration: scene.fog.exploration,
+        globalLight: scene.environment.globalLight.enabled,
+      };
+    }
+    await scene.update(update);
+  } else {
+    const update = { [`${flag}.enabled`]: false };
+    if (fog.restore) {
+      update.tokenVision = fog.restore.tokenVision;
+      update["fog.exploration"] = fog.restore.exploration;
+      update["environment.globalLight.enabled"] = fog.restore.globalLight;
+      update[`${flag}.-=restore`] = null;
+    }
+    await scene.update(update);
+  }
 }
 
 /** GM only. Sets the scene's custom fog image path; an empty path removes it (falls back to black). */

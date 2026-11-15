@@ -9,6 +9,7 @@
       "Enable": "Enable hex fog on this scene",
       "Enabled": "Hex fog enabled",
       "Disabled": "Hex fog disabled",
+      "DimTitle": "Dim fog (GM preview)",
       "ImageTitle": "Fog Image",
       "ImageLabel": "Fog image",
       "ImageHint": "Shown over unexplored hexes, stretched to cover the scene. Leave empty for black.",
