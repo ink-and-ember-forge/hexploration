@@ -11,7 +11,7 @@ what that module lacks. It works standalone and integrates softly when Kingmaker
 4. Kingdom integration (claiming hexes, via Kingmaker Tools).
 
 ## Fog and hex status
-On a hex-grid scene, use the Token controls: the hexagon button toggles fog, and the **Hex Status** tool lets you
+On a hex-grid scene, use the **Hexploration** group in the scene controls (GM only): the hexagon button toggles fog, and the **Hex Status** tool lets you
 click a hex to pick its status from a menu. Statuses, in order:
 
 | Status | Look |
