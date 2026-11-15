@@ -1,0 +1,18 @@
+# Hexploration
+
+A Foundry VTT (v13) module that improves hex exploration for the **Pathfinder 2e Kingmaker** campaign.
+It builds on [pf2e-kingmaker-tools](https://github.com/BernhardPosselt/pf2e-kingmaker-tools) and only adds
+what that module lacks. It works standalone and integrates softly when Kingmaker Tools is present.
+
+## Roadmap
+1. **Fog of war** (in progress): GM-controlled hex overlay, auto-reveal as the party moves.
+2. Travel and time tracking.
+3. Exploration activities and encounters.
+4. Kingdom integration (claiming hexes, via Kingmaker Tools).
+
+## Fog usage
+On a hex-grid scene, use the Token controls: hexagon button toggles fog, eye reveals hexes
+(click: seen, click again or shift-click: explored), eye-slash re-hides. The party actor's token auto-reveals as it moves.
+
+## Status
+Untested scaffold: not yet run inside Foundry.
