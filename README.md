@@ -24,7 +24,8 @@ click a hex to pick its status from a menu. Statuses, in order:
 | Claimed | thick solid blue outline |
 
 Outlines differ in colour *and* line style so they stay readable for colour-blind players. The party actor's
-token marks hexes it moves into as Visited (it never downgrades a hex).
+token marks hexes it moves into as Visited (it never downgrades a hex). Marking a hex Visited, by token or from
+the menu, also marks its Unknown neighbours as Seen.
 
 Enabling hex fog also turns off Foundry's token vision, fog exploration and darkness on that scene (global
 illumination on), and turning it off restores the previous values. The GM sees fog at full strength like players;

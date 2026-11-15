@@ -19,15 +19,28 @@ export function stateOf(scene, coords) {
   return getFog(scene).hexes[key(coords)] ?? STATES.UNKNOWN;
 }
 
-/** GM only. Sets (or with UNKNOWN clears) the state of a list of hexes in one update. */
+/**
+ * GM only. Sets (or with UNKNOWN clears) the state of a list of hexes in one update.
+ * Marking a hex Visited also marks its still-Unknown neighbours as Seen (never touching hexes that
+ * already have a status).
+ */
 export async function setHexes(scene, coordsList, state) {
   if (!game.user.isGM) return;
   const update = {};
+  const path = `flags.${MODULE_ID}.fog.hexes`;
+  const hexes = getFog(scene).hexes;
   for (const c of coordsList) {
-    const path = `flags.${MODULE_ID}.fog.hexes`;
     // setFlag/update merges objects, so removal needs Foundry's "-=" delete syntax.
     if (state === STATES.UNKNOWN) update[`${path}.-=${key(c)}`] = null;
     else update[`${path}.${key(c)}`] = state;
+  }
+  if (state === STATES.VISITED) {
+    for (const c of coordsList) {
+      for (const n of canvas.grid.getAdjacentOffsets(c)) {
+        const k = key(n);
+        if (!hexes[k] && !(`${path}.${k}` in update)) update[`${path}.${k}`] = STATES.SEEN;
+      }
+    }
   }
   console.log(`${MODULE_ID} | setHexes`, state, update);
   await scene.update(update);
