@@ -11,7 +11,7 @@ what that module lacks. It works standalone and integrates softly when Kingmaker
 4. Kingdom integration (claiming hexes, via Kingmaker Tools).
 
 ## Fog and hex status
-On a hex-grid scene, use the Token controls: the hexagon button toggles fog, and the **Hex Status** tool lets you
+On a hex-grid scene, use the **Hexploration** group in the scene controls (GM only): the hexagon button toggles fog, and the **Hex Status** tool lets you
 click a hex to pick its status from a menu. Statuses, in order:
 
 | Status | Look |
@@ -24,7 +24,7 @@ click a hex to pick its status from a menu. Statuses, in order:
 | Claimed | thick solid blue outline |
 
 Outlines differ in colour *and* line style so they stay readable for colour-blind players. The party actor's
-token marks hexes it moves into as Visited (it never downgrades a hex). Marking a hex Visited, by token or from
+token marks hexes it moves into as Visited (it never downgrades a hex). The reset button (counter-clockwise arrow) sets every hex on the scene back to Unknown after a confirmation. Marking a hex Visited, by token or from
 the menu, also marks its Unknown neighbours as Seen.
 
 Enabling hex fog also turns off Foundry's token vision, fog exploration and darkness on that scene (global

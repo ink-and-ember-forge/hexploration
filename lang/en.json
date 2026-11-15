@@ -14,7 +14,12 @@
       "ImageHint": "Shown over unexplored hexes, stretched to cover the scene. Leave empty for black.",
       "ImageSave": "Save",
       "NotEnabled": "Hex fog is off on this scene. Use the hexagon button first.",
-      "NeedsHexGrid": "Hex fog requires a hexagonal grid scene."
+      "NeedsHexGrid": "Hex fog requires a hexagonal grid scene.",
+      "ResetTitle": "Reset Hex Map",
+      "ResetConfirm": "Set all {count} marked hexes on this scene back to Unknown? This cannot be undone.",
+      "ResetYes": "Reset to Unknown",
+      "ResetDone": "All hexes reset to Unknown.",
+      "ResetNothing": "No hexes are marked on this scene."
     },
     "Settings": {
       "AutoReveal": {
