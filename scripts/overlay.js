@@ -3,6 +3,21 @@ import { getFog, stateOf, STATES } from "./fog.js";
 /** Draws the fog as a PIXI container above tokens. Redrawn whenever scene flags change. */
 export class FogOverlay {
   container = null;
+  capture = null;
+
+  /** While a tool is active, a transparent full-map layer receives the pointer events. */
+  setCapture(handler) {
+    this.capture?.destroy();
+    this.capture = null;
+    if (!handler || !canvas.ready) return;
+    const layer = new PIXI.Container();
+    layer.hitArea = new PIXI.Rectangle(0, 0, canvas.dimensions.width, canvas.dimensions.height);
+    layer.eventMode = "static";
+    layer.cursor = "crosshair";
+    layer.on("pointerdown", handler);
+    canvas.interface.addChild(layer);
+    this.capture = layer;
+  }
 
   attach() {
     this.detach();
@@ -13,6 +28,7 @@ export class FogOverlay {
   }
 
   detach() {
+    this.setCapture(null);
     this.container?.destroy({ children: true });
     this.container = null;
   }

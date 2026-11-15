@@ -29,7 +29,7 @@ export async function setHexes(scene, coordsList, state) {
     if (state === STATES.UNKNOWN) update[`${path}.-=${key(c)}`] = null;
     else update[`${path}.${key(c)}`] = state;
   }
-  console.debug(`${MODULE_ID} | setHexes`, state, update);
+  console.log(`${MODULE_ID} | setHexes`, state, update);
   await scene.update(update);
 }
 
