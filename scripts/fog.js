@@ -37,3 +37,10 @@ export async function setEnabled(scene, enabled) {
   if (!game.user.isGM) return;
   await scene.setFlag(MODULE_ID, "fog.enabled", enabled);
 }
+
+/** GM only. Sets the scene's custom fog image path; an empty path removes it (falls back to black). */
+export async function setImage(scene, path) {
+  if (!game.user.isGM) return;
+  if (path) await scene.setFlag(MODULE_ID, "fog.image", path);
+  else await scene.update({ [`flags.${MODULE_ID}.fog.-=image`]: null });
+}

@@ -9,6 +9,10 @@
       "Enable": "Enable hex fog on this scene",
       "Enabled": "Hex fog enabled",
       "Disabled": "Hex fog disabled",
+      "ImageTitle": "Fog Image",
+      "ImageLabel": "Fog image",
+      "ImageHint": "Shown over unexplored hexes, stretched to cover the scene. Leave empty for black.",
+      "ImageSave": "Save",
       "NotEnabled": "Hex fog is off on this scene. Use the hexagon button first.",
       "NeedsHexGrid": "Hex fog requires a hexagonal grid scene."
     },
