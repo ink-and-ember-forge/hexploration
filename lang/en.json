@@ -30,6 +30,18 @@
       "ShowTerrain": {
         "Name": "Show terrain labels",
         "Hint": "Show hex terrain and road labels on hexes you have visited."
+      },
+      "TrackTravel": {
+        "Name": "Track travel",
+        "Hint": "Charge hexploration activities to the day's budget when the party token enters a hex."
+      },
+      "PartySpeed": {
+        "Name": "Party travel Speed (feet)",
+        "Hint": "Speed of the slowest party member. Ignored when pf2e-kingmaker-tools camping data is present."
+      },
+      "HexSize": {
+        "Name": "Hex size (miles)",
+        "Hint": "Corner to corner. 12 is standard; smaller hexes give more activities per hex. Ignored when pf2e-kingmaker-tools camping data is present."
       }
     },
     "State": {
@@ -48,7 +60,31 @@
       "swamp": "Swamp",
       "water": "Water",
       "road": "Road",
-      "clear": "Clear terrain"
+      "clear": "Clear terrain",
+      "adjust-1": "Easier (−1 step)",
+      "adjust0": "Standard difficulty",
+      "adjust1": "Harder (+1 step)",
+      "legendTitle": "Terrain",
+      "unset": "Not set"
+    },
+    "Travel": {
+      "Title": "Travel Tracker",
+      "Budget": "{spent} of {total} activities used",
+      "Left": "{n} left",
+      "Over": "over by {n}",
+      "Party": "Speed {speed} ft, {size}-mile hexes",
+      "SourceCamping": "from Kingmaker Tools camping",
+      "SourceSettings": "from module settings",
+      "ForcedMarch": "Forced march",
+      "ForcedMarchCamping": "Forced march (set on the camping sheet)",
+      "Reconnoiter": "Reconnoiter this hex ({cost})",
+      "NoParty": "No party token found on this scene.",
+      "NewDay": "New day",
+      "LogMove": "Travelled into {terrain}",
+      "LogRecon": "Reconnoitered {terrain}",
+      "LogManual": "Manual adjustment",
+      "NothingYet": "No travel yet today.",
+      "Unset": "Open (terrain not set)"
     }
   }
 }

@@ -82,6 +82,14 @@ export function showTerrainMenu(clientX, clientY, current, handlers) {
       checked: current.road,
       onPick: () => handlers.setRoad(!current.road),
     },
+    { separator: true },
+    ...[-1, 0, 1].map((step) => ({
+      label: game.i18n.localize(`HEXPLORATION.Terrain.adjust${step}`),
+      swatch: "",
+      checked: current.adjust === step,
+      onPick: () => handlers.setAdjust(step),
+    })),
+    { separator: true },
     { label: game.i18n.localize("HEXPLORATION.Terrain.clear"), swatch: "", onPick: () => handlers.clear() },
   );
   showMenu(clientX, clientY, items);

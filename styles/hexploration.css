@@ -35,3 +35,38 @@
   border-radius: 2px;
 }
 .hexploration-menu-sep { width: 100%; margin: 3px 0; border: 0; border-top: 1px solid var(--color-border-dark, #555); }
+
+.hexploration-travel .hx-travel { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+.hexploration-travel p { margin: 0; }
+.hexploration-travel .hx-budget { display: flex; justify-content: space-between; gap: 8px; }
+.hexploration-travel .hx-budget .over, .hexploration-travel .hx-bar .over { color: #e05050; }
+.hexploration-travel .hx-bar { height: 8px; border-radius: 4px; background: #0005; overflow: hidden; }
+.hexploration-travel .hx-bar div { height: 100%; background: #5aa469; }
+.hexploration-travel .hx-bar div.over { background: #e05050; }
+.hexploration-travel .hx-meta { font-size: var(--font-size-12, 12px); opacity: 0.8; }
+.hexploration-travel .hx-forced { display: flex; align-items: center; gap: 6px; }
+.hexploration-travel .hx-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+.hexploration-travel .hx-buttons button { flex: 1 1 auto; width: auto; }
+.hexploration-travel .hx-log { margin: 0; padding-left: 0; list-style: none; max-height: 180px; overflow-y: auto; }
+.hexploration-travel .hx-log li { padding: 2px 0; border-top: 1px solid #ffffff14; }
+.hexploration-travel .hx-log .cost { display: inline-block; min-width: 2.2em; font-weight: bold; }
+.hexploration-travel .hx-log .empty { opacity: 0.6; }
+
+.hexploration-legend {
+  position: fixed;
+  left: 16px;
+  bottom: 260px;
+  z-index: 60;
+  min-width: 150px;
+  padding: 6px 8px;
+  background: var(--color-cool-5, #1e1e24);
+  border: 1px solid var(--color-border-dark, #555);
+  border-radius: 6px;
+  color: var(--color-light-1, #eee);
+  pointer-events: none;
+}
+.hexploration-legend .title { margin-bottom: 3px; font-weight: bold; }
+.hexploration-legend .row { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
+.hexploration-legend .chip { flex: none; width: 18px; height: 12px; box-sizing: border-box; border-radius: 2px; }
+.hexploration-legend .name { flex: 1; }
+.hexploration-legend .n { opacity: 0.8; font-variant-numeric: tabular-nums; }

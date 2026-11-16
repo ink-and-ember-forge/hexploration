@@ -2,8 +2,9 @@ import { MODULE_ID, key } from "./fog.js";
 
 /**
  * Per-hex terrain, stored separately from fog status in `flags.hexploration.terrain` as
- * { "i_j": { terrain?: id, road?: boolean } }. A road is a feature that crosses any terrain, so it
- * is a flag next to the terrain type, not another terrain choice.
+ * { "i_j": { terrain?: id, road?: boolean, adjust?: -1|0|1 } }. A road is a feature that crosses any terrain, so
+ * it is a flag next to the terrain type, not another terrain choice. `adjust` is the GM's per-hex difficulty
+ * override in steps (e.g. +1 for dense jungle), used by the travel cost.
  */
 export const TERRAIN_ORDER = ["open", "forest", "hills", "mountains", "swamp", "water"];
 
@@ -20,10 +21,10 @@ export const getTerrainMap = (scene) => scene?.getFlag(MODULE_ID, "terrain") ?? 
 
 export function terrainOf(scene, coords) {
   const record = getTerrainMap(scene)[key(coords)];
-  return { terrain: record?.terrain ?? null, road: !!record?.road };
+  return { terrain: record?.terrain ?? null, road: !!record?.road, adjust: Number(record?.adjust ?? 0) };
 }
 
-/** GM only. Merges `patch` ({ terrain?, road? }) into the hex's record, e.g. { terrain: "forest" }. */
+/** GM only. Merges `patch` ({ terrain?, road?, adjust? }) into the hex's record, e.g. { terrain: "forest" }. */
 export async function setTerrain(scene, coords, patch) {
   if (!game.user.isGM) return;
   const path = `flags.${MODULE_ID}.terrain.${key(coords)}`;
