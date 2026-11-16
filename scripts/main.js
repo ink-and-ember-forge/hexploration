@@ -62,11 +62,20 @@ Hooks.once("init", () => {
   });
 });
 
+/**
+ * Is the GM's active tool the Terrain tool? Checked every frame because Foundry switches tools with
+ * `ui.controls.activate()`, which deliberately avoids a full re-render, so no render hook reliably fires.
+ * setEditingTerrain() does nothing unless the answer changed, so this costs one string comparison per frame.
+ */
+const syncTerrainEditing = () => overlay.setEditingTerrain(game.user.isGM && ui.controls?.tool?.name === "hexTerrain");
+
 Hooks.on("canvasReady", () => {
   console.log(`${MODULE_ID} | canvasReady, hex grid:`, canvas.grid.isHexagonal);
+  canvas.app.ticker.add(syncTerrainEditing);
   overlay.attach();
 });
 Hooks.on("canvasTearDown", () => {
+  canvas.app?.ticker?.remove(syncTerrainEditing);
   closeMenu();
   overlay.detach();
 });
@@ -221,8 +230,8 @@ document.addEventListener(
   { capture: true },
 );
 
-// Show terrain labels on fogged hexes too while the GM is editing terrain.
-Hooks.on("renderSceneControls", () => overlay.setEditingTerrain(game.user.isGM && ui.controls?.tool?.name === "hexTerrain"));
+// Also re-check when the controls render (the per-frame check above is what guarantees it stays in sync).
+Hooks.on("renderSceneControls", syncTerrainEditing);
 
 Hooks.once("ready", () => console.log(`${MODULE_ID} | ready`));
 

@@ -36,6 +36,7 @@ export class FogOverlay {
   setEditingTerrain(editing) {
     if (editing === this.#editingTerrain) return;
     this.#editingTerrain = editing;
+    console.log(`hexploration | terrain editing view ${editing ? "on" : "off"}`);
     if (!editing) hideTerrainLegend();
     this.redraw();
   }
