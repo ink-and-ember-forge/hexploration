@@ -1,6 +1,7 @@
 import { MODULE_ID, getFog, hexAt, isHexScene, resetAllHexes, setEnabled, setHexes, setImage, stateOf } from "./fog.js";
 import { STATES, rank } from "./states.js";
-import { closeMenu, showStatusMenu } from "./menu.js";
+import { closeMenu, showStatusMenu, showTerrainMenu } from "./menu.js";
+import { clearTerrain, setTerrain, terrainOf } from "./terrain.js";
 import { FogOverlay } from "./overlay.js";
 
 const overlay = new FogOverlay();
@@ -13,6 +14,15 @@ Hooks.once("init", () => {
     config: true,
     type: Boolean,
     default: true,
+  });
+  game.settings.register(MODULE_ID, "showTerrain", {
+    name: "HEXPLORATION.Settings.ShowTerrain.Name",
+    hint: "HEXPLORATION.Settings.ShowTerrain.Hint",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => overlay.redraw(),
   });
   game.settings.register(MODULE_ID, "dimFog", {
     scope: "client",
@@ -47,11 +57,12 @@ Hooks.on("getSceneControlButtons", (controls) => {
     activeTool: "hexStatus",
     tools: {
       hexStatus: { name: "hexStatus", title: "HEXPLORATION.Tools.Status", icon: "fa-solid fa-hexagon-nodes", order: 0 },
+      hexTerrain: { name: "hexTerrain", title: "HEXPLORATION.Tools.Terrain", icon: "fa-solid fa-mountain-sun", order: 1 },
       hexFogToggle: {
         name: "hexFogToggle",
         title: "HEXPLORATION.Fog.Enable",
         icon: "fa-solid fa-hexagon",
-        order: 1,
+        order: 2,
         button: true,
         onChange: async () => {
           const scene = canvas.scene;
@@ -65,7 +76,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
         name: "hexFogImage",
         title: "HEXPLORATION.Fog.ImageTitle",
         icon: "fa-solid fa-image",
-        order: 2,
+        order: 3,
         button: true,
         onChange: () => openImageDialog(),
       },
@@ -73,7 +84,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
         name: "hexFogDim",
         title: "HEXPLORATION.Fog.DimTitle",
         icon: "fa-solid fa-circle-half-stroke",
-        order: 3,
+        order: 4,
         toggle: true,
         active: game.settings.get(MODULE_ID, "dimFog"),
         onChange: (_event, active) => game.settings.set(MODULE_ID, "dimFog", active),
@@ -83,7 +94,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
         name: "hexFogReset",
         title: "HEXPLORATION.Fog.ResetTitle",
         icon: "fa-solid fa-rotate-left",
-        order: 4,
+        order: 5,
         button: true,
         onChange: () => confirmReset(),
       },
@@ -128,32 +139,45 @@ async function openImageDialog() {
   await setImage(scene, image.trim());
 }
 
-const statusToolActive = () => game.user.isGM && ui.controls?.tool?.name === "hexStatus";
+const activeHexTool = () => (game.user.isGM && ["hexStatus", "hexTerrain"].includes(ui.controls?.tool?.name) ? ui.controls.tool.name : null);
 
-/** Opens the status menu for the hex under the pointer. */
-function openStatusMenu(event) {
+/** Opens the menu for the active tool on the hex under the pointer. */
+function openHexMenu(event, tool) {
   const scene = canvas.scene;
   if (!scene) return;
-  if (!getFog(scene).enabled) return ui.notifications.warn(game.i18n.localize("HEXPLORATION.Fog.NotEnabled"));
   const coords = hexAt(canvas.canvasCoordinatesFromClient({ x: event.clientX, y: event.clientY }));
-  console.log(`${MODULE_ID} | menu for hex`, coords);
-  showStatusMenu(event.clientX, event.clientY, stateOf(scene, coords), (state) => setHexes(scene, [coords], state));
+  console.log(`${MODULE_ID} | ${tool} menu for hex`, coords);
+  if (tool === "hexStatus") {
+    if (!getFog(scene).enabled) return ui.notifications.warn(game.i18n.localize("HEXPLORATION.Fog.NotEnabled"));
+    return showStatusMenu(event.clientX, event.clientY, stateOf(scene, coords), (state) => setHexes(scene, [coords], state));
+  }
+  if (!isHexScene(scene)) return ui.notifications.warn(game.i18n.localize("HEXPLORATION.Fog.NeedsHexGrid"));
+  const current = terrainOf(scene, coords);
+  showTerrainMenu(event.clientX, event.clientY, current, {
+    setTerrain: (terrain) => setTerrain(scene, coords, { terrain }),
+    setRoad: (road) => setTerrain(scene, coords, { road }),
+    clear: () => clearTerrain(scene, coords),
+  });
 }
 
 /**
  * Raw browser event on the canvas element, in the capture phase (before PIXI sees it).
- * With the Hex Status tool active, a left-click opens the status menu for that hex.
+ * With a Hexploration menu tool active, a left-click opens that tool's menu for the hex.
  */
 document.addEventListener(
   "pointerdown",
   (event) => {
-    if (event.button !== 0 || !statusToolActive() || event.target !== canvas.app?.view) return;
+    const tool = activeHexTool();
+    if (event.button !== 0 || !tool || event.target !== canvas.app?.view) return;
     event.preventDefault();
     event.stopPropagation(); // keep the click from also starting a token marquee/deselect
-    openStatusMenu(event);
+    openHexMenu(event, tool);
   },
   { capture: true },
 );
+
+// Show terrain labels on fogged hexes too while the GM is editing terrain.
+Hooks.on("renderSceneControls", () => overlay.setEditingTerrain(game.user.isGM && ui.controls?.tool?.name === "hexTerrain"));
 
 Hooks.once("ready", () => console.log(`${MODULE_ID} | ready`));
 

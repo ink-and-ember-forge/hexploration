@@ -34,3 +34,4 @@
   box-sizing: border-box;
   border-radius: 2px;
 }
+.hexploration-menu-sep { width: 100%; margin: 3px 0; border: 0; border-top: 1px solid var(--color-border-dark, #555); }

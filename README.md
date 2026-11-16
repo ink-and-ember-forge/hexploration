@@ -10,6 +10,13 @@ what that module lacks. It works standalone and integrates softly when Kingmaker
 3. Exploration activities and encounters.
 4. Kingdom integration (claiming hexes, via Kingmaker Tools).
 
+## Terrain
+The **Terrain** tool opens a menu on a clicked hex: Open, Forest, Hills, Mountains, Swamp or Water, plus a Road
+on/off flag (a road crosses any terrain, so it is separate) and Clear. Terrain labels show on hexes players have
+visited (a client setting can hide them); while the GM has the Terrain tool selected, labels show on every hex.
+Terrain is stored separately from fog status, and the map reset button does not clear it. Travel costs per
+terrain are planned next.
+
 ## Fog and hex status
 On a hex-grid scene, use the **Hexploration** group in the scene controls (GM only): the hexagon button toggles fog, and the **Hex Status** tool lets you
 click a hex to pick its status from a menu. Statuses, in order:

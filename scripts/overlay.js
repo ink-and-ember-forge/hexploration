@@ -1,5 +1,6 @@
 import { getFog, stateOf } from "./fog.js";
 import { STATES, STATE_STYLE } from "./states.js";
+import { TERRAIN_STYLE, getTerrainMap } from "./terrain.js";
 
 const loadTex = (src) => (foundry.canvas?.loadTexture ?? loadTexture)(src);
 
@@ -28,6 +29,14 @@ export class FogOverlay {
   container = null; // root: holds the clip mask and the content
   content = null; // everything drawn lives here, clipped to the scene rectangle
   #generation = 0;
+  #editingTerrain = false;
+
+  /** While the GM has the Terrain tool selected, labels also show on fogged hexes. */
+  setEditingTerrain(editing) {
+    if (editing === this.#editingTerrain) return;
+    this.#editingTerrain = editing;
+    this.redraw();
+  }
 
   attach() {
     this.detach();
@@ -55,7 +64,12 @@ export class FogOverlay {
     const scene = canvas.scene;
     const fog = getFog(scene);
     const clear = () => this.content.removeChildren().forEach((c) => c.destroy());
-    if (!fog.enabled || !canvas.grid.isHexagonal) return clear();
+    if (!fog.enabled || !canvas.grid.isHexagonal) {
+      clear();
+      // Without fog there is nothing hiding hexes, so labels are for the GM's editing only.
+      if (canvas.grid.isHexagonal) this.#drawTerrainLabels(scene, canvas.dimensions.sceneRect, false);
+      return;
+    }
 
     let texture = null;
     if (fog.image) {
@@ -152,6 +166,43 @@ export class FogOverlay {
         else g.drawPolygon(pts.flatMap((p) => [p.x, p.y]));
       }
       this.content.addChild(g);
+    }
+
+    this.#drawTerrainLabels(scene, rect, true);
+  }
+
+  /** Terrain/road badges. Players only see them on hexes that aren't fogged; the GM sees all while editing. */
+  #drawTerrainLabels(scene, rect, fogEnabled) {
+    const showFogged = game.user.isGM && this.#editingTerrain;
+    if (!fogEnabled && !showFogged) return;
+    if (!game.settings.get("hexploration", "showTerrain") && !showFogged) return;
+    const fontSize = Math.max(10, canvas.grid.sizeY * 0.13);
+    const style = CONFIG.canvasTextStyle.clone();
+    Object.assign(style, { fontSize, fill: 0xffffff, stroke: 0x000000, strokeThickness: Math.max(2, fontSize / 5) });
+    for (const [k, record] of Object.entries(getTerrainMap(scene))) {
+      const [i, j] = k.split("_").map(Number);
+      const coords = { i, j };
+      const status = stateOf(scene, coords);
+      if (STATE_STYLE[status]?.fogged && !showFogged) continue;
+      const center = canvas.grid.getCenterPoint(coords);
+      if (!rect.contains(center.x, center.y)) continue;
+      const parts = [];
+      if (record.terrain) parts.push(game.i18n.localize(`HEXPLORATION.Terrain.${record.terrain}`));
+      if (record.road) parts.push(game.i18n.localize("HEXPLORATION.Terrain.road"));
+      if (!parts.length) continue;
+      const text = new PIXI.Text(parts.join(" + "), style);
+      text.anchor.set(0.5);
+      const padX = fontSize * 0.5;
+      const padY = fontSize * 0.25;
+      const chip = new PIXI.Graphics();
+      chip.beginFill(TERRAIN_STYLE[record.terrain]?.color ?? 0x8a7a55, 0.85);
+      chip.drawRoundedRect(-text.width / 2 - padX, -text.height / 2 - padY, text.width + padX * 2, text.height + padY * 2, fontSize * 0.4);
+      chip.endFill();
+      const badge = new PIXI.Container();
+      badge.addChild(chip, text);
+      // Lower part of the hex, so it stays clear of a token sitting in the middle.
+      badge.position.set(center.x, center.y + canvas.grid.sizeY * 0.3);
+      this.content.addChild(badge);
     }
   }
 }
