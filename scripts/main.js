@@ -2,9 +2,12 @@ import { MODULE_ID, getFog, hexAt, isHexScene, resetAllHexes, setEnabled, setHex
 import { STATES, rank } from "./states.js";
 import { closeMenu, showStatusMenu, showTerrainMenu } from "./menu.js";
 import { clearTerrain, setTerrain, terrainOf } from "./terrain.js";
+import { TravelTracker, trackMove } from "./tracker.js";
+import { isPartyToken } from "./party.js";
 import { FogOverlay } from "./overlay.js";
 
 const overlay = new FogOverlay();
+let tracker = null; // the Travel Tracker window, created on first use
 
 Hooks.once("init", () => {
   game.settings.register(MODULE_ID, "autoReveal", {
@@ -14,6 +17,32 @@ Hooks.once("init", () => {
     config: true,
     type: Boolean,
     default: true,
+  });
+  game.settings.register(MODULE_ID, "trackTravel", {
+    name: "HEXPLORATION.Settings.TrackTravel.Name",
+    hint: "HEXPLORATION.Settings.TrackTravel.Hint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+  game.settings.register(MODULE_ID, "partySpeed", {
+    name: "HEXPLORATION.Settings.PartySpeed.Name",
+    hint: "HEXPLORATION.Settings.PartySpeed.Hint",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 25,
+    onChange: () => tracker?.refresh(),
+  });
+  game.settings.register(MODULE_ID, "hexSizeMiles", {
+    name: "HEXPLORATION.Settings.HexSize.Name",
+    hint: "HEXPLORATION.Settings.HexSize.Hint",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 12,
+    onChange: () => tracker?.refresh(),
   });
   game.settings.register(MODULE_ID, "showTerrain", {
     name: "HEXPLORATION.Settings.ShowTerrain.Name",
@@ -42,7 +71,10 @@ Hooks.on("canvasTearDown", () => {
   overlay.detach();
 });
 Hooks.on("updateScene", (scene, changes) => {
-  if (scene.id === canvas.scene?.id && foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`)) overlay.redraw();
+  if (scene.id === canvas.scene?.id && foundry.utils.hasProperty(changes, `flags.${MODULE_ID}`)) {
+    overlay.redraw();
+    tracker?.refresh();
+  }
 });
 
 // v13 scene controls: a dedicated "Hexploration" group (GM only), like Tiles or Lighting.
@@ -58,6 +90,18 @@ Hooks.on("getSceneControlButtons", (controls) => {
     tools: {
       hexStatus: { name: "hexStatus", title: "HEXPLORATION.Tools.Status", icon: "fa-solid fa-hexagon-nodes", order: 0 },
       hexTerrain: { name: "hexTerrain", title: "HEXPLORATION.Tools.Terrain", icon: "fa-solid fa-mountain-sun", order: 1 },
+      hexTravel: {
+        name: "hexTravel",
+        title: "HEXPLORATION.Travel.Title",
+        icon: "fa-solid fa-route",
+        order: 1.5,
+        button: true,
+        onChange: () => {
+          tracker ??= new TravelTracker();
+          if (tracker.rendered) tracker.close();
+          else tracker.render({ force: true });
+        },
+      },
       hexFogToggle: {
         name: "hexFogToggle",
         title: "HEXPLORATION.Fog.Enable",
@@ -156,6 +200,7 @@ function openHexMenu(event, tool) {
   showTerrainMenu(event.clientX, event.clientY, current, {
     setTerrain: (terrain) => setTerrain(scene, coords, { terrain }),
     setRoad: (road) => setTerrain(scene, coords, { road }),
+    setAdjust: (adjust) => setTerrain(scene, coords, { adjust }),
     clear: () => clearTerrain(scene, coords),
   });
 }
@@ -181,16 +226,17 @@ Hooks.on("renderSceneControls", () => overlay.setEditingTerrain(game.user.isGM &
 
 Hooks.once("ready", () => console.log(`${MODULE_ID} | ready`));
 
-// Auto-reveal the hex a party token moves into. Runs on the GM client only.
+// When the party token moves (GM client only): reveal the hex it enters and charge its travel cost.
 Hooks.on("updateToken", (token, changes) => {
-  if (!game.user.isGM || !game.settings.get(MODULE_ID, "autoReveal")) return;
-  if (!("x" in changes || "y" in changes)) return;
+  if (!game.user.isGM || !("x" in changes || "y" in changes)) return;
   const scene = token.parent;
-  if (scene.id !== canvas.scene?.id || !getFog(scene).enabled) return;
-  if (token.actor?.type !== "party" && !token.actor?.getFlag(MODULE_ID, "isParty")) return;
-  const center = token.object?.center;
+  if (scene.id !== canvas.scene?.id || !isHexScene(scene) || !isPartyToken(token)) return;
+  // Use the document's final position, not the (possibly still animating) canvas object.
+  const center = token.getCenterPoint?.() ?? token.object?.center;
   if (!center) return;
-  // Moving onto a hex marks it Visited, but never downgrades one already Explored/Cleared/Claimed.
   const coords = hexAt(center);
-  if (rank(stateOf(scene, coords)) < rank(STATES.VISITED)) setHexes(scene, [coords], STATES.VISITED);
+  // Moving onto a hex marks it Visited, but never downgrades one already Explored/Cleared/Claimed.
+  if (game.settings.get(MODULE_ID, "autoReveal") && getFog(scene).enabled && rank(stateOf(scene, coords)) < rank(STATES.VISITED))
+    setHexes(scene, [coords], STATES.VISITED);
+  if (game.settings.get(MODULE_ID, "trackTravel")) trackMove(scene, coords);
 });

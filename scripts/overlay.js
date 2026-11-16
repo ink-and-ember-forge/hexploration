@@ -187,7 +187,11 @@ export class FogOverlay {
       const center = canvas.grid.getCenterPoint(coords);
       if (!rect.contains(center.x, center.y)) continue;
       const parts = [];
-      if (record.terrain) parts.push(game.i18n.localize(`HEXPLORATION.Terrain.${record.terrain}`));
+      if (record.terrain) {
+        const step = Number(record.adjust ?? 0);
+        const suffix = step ? ` (${step > 0 ? "+" : "\u2212"}${Math.abs(step)})` : ""; // difficulty override
+        parts.push(game.i18n.localize(`HEXPLORATION.Terrain.${record.terrain}`) + suffix);
+      }
       if (record.road) parts.push(game.i18n.localize("HEXPLORATION.Terrain.road"));
       if (!parts.length) continue;
       const text = new PIXI.Text(parts.join(" + "), style);

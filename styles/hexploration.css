@@ -35,3 +35,19 @@
   border-radius: 2px;
 }
 .hexploration-menu-sep { width: 100%; margin: 3px 0; border: 0; border-top: 1px solid var(--color-border-dark, #555); }
+
+.hexploration-travel .hx-travel { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+.hexploration-travel p { margin: 0; }
+.hexploration-travel .hx-budget { display: flex; justify-content: space-between; gap: 8px; }
+.hexploration-travel .hx-budget .over, .hexploration-travel .hx-bar .over { color: #e05050; }
+.hexploration-travel .hx-bar { height: 8px; border-radius: 4px; background: #0005; overflow: hidden; }
+.hexploration-travel .hx-bar div { height: 100%; background: #5aa469; }
+.hexploration-travel .hx-bar div.over { background: #e05050; }
+.hexploration-travel .hx-meta { font-size: var(--font-size-12, 12px); opacity: 0.8; }
+.hexploration-travel .hx-forced { display: flex; align-items: center; gap: 6px; }
+.hexploration-travel .hx-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+.hexploration-travel .hx-buttons button { flex: 1 1 auto; width: auto; }
+.hexploration-travel .hx-log { margin: 0; padding-left: 0; list-style: none; max-height: 180px; overflow-y: auto; }
+.hexploration-travel .hx-log li { padding: 2px 0; border-top: 1px solid #ffffff14; }
+.hexploration-travel .hx-log .cost { display: inline-block; min-width: 2.2em; font-weight: bold; }
+.hexploration-travel .hx-log .empty { opacity: 0.6; }
