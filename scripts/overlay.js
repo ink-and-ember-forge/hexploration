@@ -71,7 +71,7 @@ export class FogOverlay {
       clear();
       // Without fog there is nothing hiding hexes, so labels are for the GM's editing only.
       if (canvas.grid.isHexagonal) {
-        if (game.user.isGM && this.#editingTerrain) this.#drawTerrainTint(scene, canvas.dimensions.sceneRect);
+        if (game.user.isGM && this.#editingTerrain) this.#drawTerrainTint(scene, canvas.dimensions.sceneRect, false);
         this.#drawTerrainLabels(scene, canvas.dimensions.sceneRect, false);
       }
       return;
@@ -174,7 +174,7 @@ export class FogOverlay {
       this.content.addChild(g);
     }
 
-    if (game.user.isGM && this.#editingTerrain) this.#drawTerrainTint(scene, rect);
+    if (game.user.isGM && this.#editingTerrain) this.#drawTerrainTint(scene, rect, true);
     this.#drawTerrainLabels(scene, rect, true);
   }
 
@@ -207,7 +207,7 @@ export class FogOverlay {
    * Terrain editing view (GM, Terrain tool selected): each hex tinted in its terrain colour, hexes with no
    * terrain outlined with a dashed grey line, plus a legend with counts so it's clear what is still unset.
    */
-  #drawTerrainTint(scene, rect) {
+  #drawTerrainTint(scene, rect, fogEnabled) {
     const map = getTerrainMap(scene);
     const counts = { unset: 0 };
     const fills = new PIXI.Graphics();
@@ -217,7 +217,9 @@ export class FogOverlay {
       const terrain = map[key(coords)]?.terrain;
       if (terrain && TERRAIN_STYLE[terrain]) {
         counts[terrain] = (counts[terrain] ?? 0) + 1;
-        fills.beginFill(TERRAIN_STYLE[terrain].color, 0.5).drawPolygon(verts.flatMap((p) => [p.x, p.y])).endFill();
+        // Fogged hexes are covered by an opaque fog, so a faint tint would be invisible there: draw it strongly.
+        const fogged = fogEnabled && (STATE_STYLE[stateOf(scene, coords)]?.fogged ?? true);
+        fills.beginFill(TERRAIN_STYLE[terrain].color, fogged ? 0.9 : 0.5).drawPolygon(verts.flatMap((p) => [p.x, p.y])).endFill();
       } else {
         counts.unset++;
         dashedPolygon(unset, verts.map((p) => ({ x: center.x + (p.x - center.x) * 0.9, y: center.y + (p.y - center.y) * 0.9 })), [14, 10]);
