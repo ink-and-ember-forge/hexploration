@@ -63,7 +63,9 @@
       "clear": "Clear terrain",
       "adjust-1": "Easier (−1 step)",
       "adjust0": "Standard difficulty",
-      "adjust1": "Harder (+1 step)"
+      "adjust1": "Harder (+1 step)",
+      "legendTitle": "Terrain",
+      "unset": "Not set"
     },
     "Travel": {
       "Title": "Travel Tracker",

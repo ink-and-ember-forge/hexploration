@@ -1,4 +1,5 @@
-import { getFog, stateOf } from "./fog.js";
+import { getFog, key, stateOf } from "./fog.js";
+import { hideTerrainLegend, showTerrainLegend } from "./legend.js";
 import { STATES, STATE_STYLE } from "./states.js";
 import { TERRAIN_STYLE, getTerrainMap } from "./terrain.js";
 
@@ -35,6 +36,7 @@ export class FogOverlay {
   setEditingTerrain(editing) {
     if (editing === this.#editingTerrain) return;
     this.#editingTerrain = editing;
+    if (!editing) hideTerrainLegend();
     this.redraw();
   }
 
@@ -53,6 +55,7 @@ export class FogOverlay {
 
   detach() {
     this.#generation++;
+    hideTerrainLegend();
     this.container?.destroy({ children: true });
     this.container = null;
     this.content = null;
@@ -67,7 +70,10 @@ export class FogOverlay {
     if (!fog.enabled || !canvas.grid.isHexagonal) {
       clear();
       // Without fog there is nothing hiding hexes, so labels are for the GM's editing only.
-      if (canvas.grid.isHexagonal) this.#drawTerrainLabels(scene, canvas.dimensions.sceneRect, false);
+      if (canvas.grid.isHexagonal) {
+        if (game.user.isGM && this.#editingTerrain) this.#drawTerrainTint(scene, canvas.dimensions.sceneRect);
+        this.#drawTerrainLabels(scene, canvas.dimensions.sceneRect, false);
+      }
       return;
     }
 
@@ -168,7 +174,57 @@ export class FogOverlay {
       this.content.addChild(g);
     }
 
+    if (game.user.isGM && this.#editingTerrain) this.#drawTerrainTint(scene, rect);
     this.#drawTerrainLabels(scene, rect, true);
+  }
+
+  /** Every hex that overlaps the scene rectangle, with its vertices and centre. */
+  *#hexesInRect(rect) {
+    const corners = [
+      { x: rect.x, y: rect.y },
+      { x: rect.right, y: rect.y },
+      { x: rect.x, y: rect.bottom },
+      { x: rect.right, y: rect.bottom },
+    ].map((p) => canvas.grid.getOffset(p));
+    const iMin = Math.min(...corners.map((c) => c.i)) - 1;
+    const iMax = Math.max(...corners.map((c) => c.i)) + 1;
+    const jMin = Math.min(...corners.map((c) => c.j)) - 1;
+    const jMax = Math.max(...corners.map((c) => c.j)) + 1;
+    for (let i = iMin; i <= iMax; i++) {
+      for (let j = jMin; j <= jMax; j++) {
+        const coords = { i, j };
+        const verts = canvas.grid.getVertices(coords);
+        if (!verts.length) continue;
+        const xs = verts.map((p) => p.x);
+        const ys = verts.map((p) => p.y);
+        if (Math.max(...xs) < rect.x || Math.min(...xs) > rect.right || Math.max(...ys) < rect.y || Math.min(...ys) > rect.bottom) continue;
+        yield { coords, verts, center: canvas.grid.getCenterPoint(coords) };
+      }
+    }
+  }
+
+  /**
+   * Terrain editing view (GM, Terrain tool selected): each hex tinted in its terrain colour, hexes with no
+   * terrain outlined with a dashed grey line, plus a legend with counts so it's clear what is still unset.
+   */
+  #drawTerrainTint(scene, rect) {
+    const map = getTerrainMap(scene);
+    const counts = { unset: 0 };
+    const fills = new PIXI.Graphics();
+    const unset = new PIXI.Graphics();
+    unset.lineStyle(3, 0xdddddd, 0.85);
+    for (const { coords, verts, center } of this.#hexesInRect(rect)) {
+      const terrain = map[key(coords)]?.terrain;
+      if (terrain && TERRAIN_STYLE[terrain]) {
+        counts[terrain] = (counts[terrain] ?? 0) + 1;
+        fills.beginFill(TERRAIN_STYLE[terrain].color, 0.5).drawPolygon(verts.flatMap((p) => [p.x, p.y])).endFill();
+      } else {
+        counts.unset++;
+        dashedPolygon(unset, verts.map((p) => ({ x: center.x + (p.x - center.x) * 0.9, y: center.y + (p.y - center.y) * 0.9 })), [14, 10]);
+      }
+    }
+    this.content.addChild(fills, unset);
+    showTerrainLegend(counts);
   }
 
   /** Terrain/road badges. Players only see them on hexes that aren't fogged; the GM sees all while editing. */
