@@ -2,7 +2,8 @@
   "HEXPLORATION": {
     "Title": "Hexploration",
     "Tools": {
-      "Status": "Hex Status (click a hex)"
+      "Status": "Hex Status (click a hex)",
+      "Terrain": "Terrain (click a hex)"
     },
     "Fog": {
       "Enable": "Enable hex fog on this scene",
@@ -25,6 +26,10 @@
       "AutoReveal": {
         "Name": "Reveal on party move",
         "Hint": "Reveal the hex a party token moves into."
+      },
+      "ShowTerrain": {
+        "Name": "Show terrain labels",
+        "Hint": "Show hex terrain and road labels on hexes you have visited."
       }
     },
     "State": {
@@ -34,6 +39,16 @@
       "explored": "Explored",
       "cleared": "Cleared",
       "claimed": "Claimed"
+    },
+    "Terrain": {
+      "open": "Open",
+      "forest": "Forest",
+      "hills": "Hills",
+      "mountains": "Mountains",
+      "swamp": "Swamp",
+      "water": "Water",
+      "road": "Road",
+      "clear": "Clear terrain"
     }
   }
 }
