@@ -42,6 +42,10 @@
       "HexSize": {
         "Name": "Hex size (miles)",
         "Hint": "Corner to corner. 12 is standard; smaller hexes give more activities per hex. Ignored when pf2e-kingmaker-tools camping data is present."
+      },
+      "TerrainTint": {
+        "Name": "Terrain tint strength",
+        "Hint": "How strongly hexes are coloured while the Terrain tool is selected (0.1 to 1). Hexes under the fog are drawn about 1.8 times stronger so they stay visible."
       }
     },
     "State": {

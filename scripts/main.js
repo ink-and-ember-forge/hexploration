@@ -44,6 +44,16 @@ Hooks.once("init", () => {
     default: 12,
     onChange: () => tracker?.refresh(),
   });
+  game.settings.register(MODULE_ID, "terrainTint", {
+    name: "HEXPLORATION.Settings.TerrainTint.Name",
+    hint: "HEXPLORATION.Settings.TerrainTint.Hint",
+    scope: "client",
+    config: true,
+    type: Number,
+    range: { min: 0.1, max: 1, step: 0.05 },
+    default: 0.35,
+    onChange: () => overlay.redraw(),
+  });
   game.settings.register(MODULE_ID, "showTerrain", {
     name: "HEXPLORATION.Settings.ShowTerrain.Name",
     hint: "HEXPLORATION.Settings.ShowTerrain.Hint",

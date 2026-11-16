@@ -210,6 +210,7 @@ export class FogOverlay {
    */
   #drawTerrainTint(scene, rect, fogEnabled) {
     const map = getTerrainMap(scene);
+    const strength = Number(game.settings.get("hexploration", "terrainTint")) || 0.35; // GM setting, over visible hexes
     const counts = { unset: 0 };
     const fills = new PIXI.Graphics();
     const unset = new PIXI.Graphics();
@@ -218,9 +219,10 @@ export class FogOverlay {
       const terrain = map[key(coords)]?.terrain;
       if (terrain && TERRAIN_STYLE[terrain]) {
         counts[terrain] = (counts[terrain] ?? 0) + 1;
-        // Fogged hexes are covered by an opaque fog, so a faint tint would be invisible there: draw it strongly.
+        // Fogged hexes are covered by an opaque fog, so a faint tint would be invisible there: draw it stronger.
         const fogged = fogEnabled && (STATE_STYLE[stateOf(scene, coords)]?.fogged ?? true);
-        fills.beginFill(TERRAIN_STYLE[terrain].color, fogged ? 0.9 : 0.5).drawPolygon(verts.flatMap((p) => [p.x, p.y])).endFill();
+        const alpha = fogged ? Math.min(0.95, strength * 1.8) : strength;
+        fills.beginFill(TERRAIN_STYLE[terrain].color, alpha).drawPolygon(verts.flatMap((p) => [p.x, p.y])).endFill();
       } else {
         counts.unset++;
         dashedPolygon(unset, verts.map((p) => ({ x: center.x + (p.x - center.x) * 0.9, y: center.y + (p.y - center.y) * 0.9 })), [14, 10]);
